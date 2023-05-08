@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+  thehive:
+    image: thehiveproject/thehive4:latest
+    environment:
+      - JAVA_OPTS=-Xms2g -Xmx2g
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    volumes:
+      - thehive_data:/opt/thehive
+    ports:
+      - "9000:9000"
+    depends_on:
+      - elasticsearch
+      - cortex
+    restart: unless-stopped
+    command:
+      --cortex-port 9001
+      --cortex-keys ${CORTEX_KEY}
+  cortex:
+    image: thehiveproject/cortex:latest
+    environment:
+      - JAVA_OPTS=-Xms2g -Xmx2g
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+#      - CORTEX_ENABLE_ANALYZERS=true
+    volumes:
+      - cortex_data:/app/data
+#      - ./cortex/Cortex-Analyzers/analyzers/Abuse_Finder:/app/data/analyzers/Abuse_Finder
+      - ./cortex/Cortex-Analyzers:/opt/cortex/analyzers
+#      - ./cortex/Cortex-Analyzers/analyzers.json:/opt/cortex/analyzers/analyzers.json
+    ports:
+      - "9001:9001"
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
+    environment:
+      - discovery.type=single-node
+      - cluster.name=thehive
+      - node.name=thehive
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "9202:9202"
+    restart: unless-stopped
+
+volumes:
+  thehive_data:
+  cortex_data:
+  es_data:
+
+
